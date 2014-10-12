@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <title>canvas demo</title>
+</head>
+<body>
+  <div id='mycanvas'></div>
+  <p>
+    With a 'canvas' element any kind of 2D drawing or plotting is possible.
+    Here we set individual pixels values, then write text.
+  </p>
+  <p>
+    Note that no extra libraries or plugins are required to create graphics
+    in HTML5.  They often make it easier, but the graphics capability is there
+    in the browser.
+  </p>
+  <script>
+  // See
+  // https://developer.mozilla.org/en/docs/Web/API/CanvasRenderingContext2D
+  // and
+  //http://www.w3.org/TR/2dcontext/#pixel-manipulation
+  // for more information.
+
+  var canvas = document.createElement( 'canvas' );
+  canvas.width = 512;
+  canvas.height = 256;
+
+  var context = canvas.getContext( '2d' );
+  var image = context.getImageData( 0, 0, canvas.width, canvas.height );
+
+  var x = 0, y = 0;
+  for ( var i = 0, j = 0; i < image.data.length; i += 4, j++ ) {
+        x = j % canvas.width;
+        y = x == 0 ? y + 1 : y;
+        // Each pixel has RGBA values with range 0-255
+        image.data[ i ] = (x / canvas.width) * 256;
+        image.data[ i + 1 ] = (y / canvas.height) * 256;
+        image.data[ i + 2 ] = 0;
+        image.data[ i + 3 ] = 255;
+  }
+  context.putImageData( image, 0, 0 );
+  context.font="40px Arial";
+  context.fillText("add some text",60,150);
+  document.getElementById('mycanvas').appendChild( canvas );
+  </script>
+</body>
+</html>
