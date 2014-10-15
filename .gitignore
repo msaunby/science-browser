@@ -1,0 +1,8 @@
+
+*.json~
+
+*.js~
+
+*.awk~
+
+demos/webgl/threejs/dem.txt

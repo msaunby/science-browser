@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <title>science-browser threejs demo</title>
+    <!-- Perhaps better to visit threejs.org fork the github repo... -->
+    <script src="http://threejs.org/build/three.min.js"> </script>
+    <script src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
+    <script src="demscaled.js"></script>
+    <style>
+      body {
+        margin: 0px;
+        background-color: #aaaaff;
+        overflow: hidden;
+      }
+    </style>
+<script>
+
+// Prepare a 'scene' with camera and lights
+var scene = new THREE.Scene();
+
+var width  = window.innerWidth,
+height = window.innerHeight;
+var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 500);
+camera.position.y = -200;
+camera.position.z = 200;
+
+var controls = new THREE.TrackballControls(camera);
+
+var axes = new THREE.AxisHelper(200);
+scene.add(axes);
+
+var ambientLight = new THREE.AmbientLight( 0xffffff );
+scene.add( ambientLight );
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(width, height);
+
+function render() {
+      controls.update();
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+}
+
+// Now create an object to view - a 'mesh'
+var geometry = new THREE.PlaneGeometry( 200, 200, dem.x-1, dem.y-1);
+
+var material = new THREE.MeshPhongMaterial({
+            color: 0x0033dd,
+            wireframe: true });
+
+var grid = [];
+grid = grid.concat(dem.data);
+grid = grid.map(function(x){return (x/100);});
+grid = grid.map(function(x){ return x<0?-5:x;})
+
+for(i = 0; i < grid.length; i++){
+    geometry.vertices[i].z = grid[i];
+}
+var mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+</script>
+</head>
+<body>
+   <div id="webgl"></div>
+  <script>
+    document.getElementById('webgl').appendChild(renderer.domElement);
+    render();
+  </script>
+</body>
+</html>
