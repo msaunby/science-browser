@@ -8,14 +8,14 @@ var app = angular.module('demo', []);
 app.controller('Controller', ['$scope', '$http', function($scope, $http) {
       $scope.message = "no message";
       $scope.filename = '/science-browser/demos/webgl/threejs/dem.json';
+      $scope.sample = [];
       $scope.submit = function() {
         if ($scope.filename) {
           $scope.message = "Loading...";
           $http.get($scope.filename).
             success(function(data, status, headers, config) {
               $scope.message = "Loaded.";
-              var dem = data;
-              console.log('dem', dem);
+              $scope.sample=data.data.slice(0,100);
             }).
             error(function(data, status, headers, config) {
               $scope.message = "Failed to load.";
@@ -34,6 +34,7 @@ app.controller('Controller', ['$scope', '$http', function($scope, $http) {
   <input type="text" ng-model="filename" name="filename" />
   <input type="submit" id="submit" value="Submit" />
   <pre>{{message}}</pre>
+  <pre>{{sample}}</pre>
 </form>
 </body>
 </html>
