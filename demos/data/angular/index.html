@@ -2,75 +2,38 @@
 <html ng-app="demo">
   <head>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-rc.3/angular.min.js"></script>
-    <script src="extras/three.min.js"> </script>
-    <script src="extras/controls/TrackballControls.js"></script>
     <script>
 var app = angular.module('demo', []);
 
-app.controller('ExampleController', ['$scope', function($scope, $http) {
-      $scope.list = [];
-      $scope.text = 'hello';
+app.controller('Controller', ['$scope', '$http', function($scope, $http) {
+      $scope.message = "no message";
+      $scope.filename = '/science-browser/demos/webgl/threejs/dem.json';
       $scope.submit = function() {
-        if ($scope.text) {
-          $scope.list.push(this.text);
-          $scope.text = '';
+        if ($scope.filename) {
+          $scope.message = "Loading...";
+          $http.get($scope.filename).
+            success(function(data, status, headers, config) {
+              $scope.message = "Loaded.";
+              var dem = data;
+              console.log('dem', dem);
+            }).
+            error(function(data, status, headers, config) {
+              $scope.message = "Failed to load.";
+              console.log(status, data);
+            });
         }
       };
     }]);
-
-/*
-app.controller("PostsCtrl", function($scope, $http) {
-  paramsA = {
-   FORMAT: "JSON",
-   REQUEST: "GetCoverage",
-   SERVICE: "WCS",
-   VERSION: "1.0",
-   CRS: "CRS:84",
-   BBOX: "-4.93266,49.31965,-2.12066,52.13165",
-   COVERAGE: "UKPPBEST_Low_cloud_cover",
-   ELEVATION: "0-300m",
-   WIDTH: 200,
-   HEIGHT: 200};
-
-  $http.get('/cap', {params:paramsA}).
-    success(function(data, status, headers, config) {
-      var values = data.coverageData[0].values;
-      //console.log('Values', values);
-      texture = new THREE.Texture( generateTexture(values) );
-      texture.needsUpdate = true;
-      material = new THREE.MeshPhongMaterial({
-        map: texture, transparent: true, specular: 0xdddddd, shininess: 80 });
-      material.side = THREE.DoubleSide;
-      grid = [];
-      for(i = 0; i < values.length; i++){
-        grid = grid.concat(values[i]);
-      }
-      grid = grid.map(function(x){return 5 * (x/100);});
-      //console.log(grid);
-      for(i = 0; i < grid.length; i++){
-        geometry.vertices[i].z = grid[i];
-      }
-      var meshA = new THREE.Mesh(geometry, material);
-      meshA.castShadow = true;
-      meshA.receiveShadow = true;
-      meshA.position.z = 0.5;
-      container.add(meshA);
-    }).
-    error(function(data, status, headers, config) {
-      console.log(status, data);
-    });
-
-*/
 
   </script>
   </head>
   <body ng-app="demo">
 
-<form ng-submit="submit()" ng-controller="ExampleController">
-  Enter text and hit enter:
-  <input type="text" ng-model="text" name="text" />
+<form ng-submit="submit()" ng-controller="Controller">
+  Enter json file to load, then submit:
+  <input type="text" ng-model="filename" name="filename" />
   <input type="submit" id="submit" value="Submit" />
-  <pre>list={{list}}</pre>
+  <pre>{{message}}</pre>
 </form>
 </body>
 </html>
