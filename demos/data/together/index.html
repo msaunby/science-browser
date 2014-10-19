@@ -1,0 +1,77 @@
+<!doctype html>
+<html ng-app="share">
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-rc.3/angular.min.js"></script>
+    <script src="https://togetherjs.com/togetherjs-min.js"></script>
+    <script>
+var app = angular.module('share', []);
+var chart;
+
+
+// Important.
+// This is NOT a good example of the blending of these libraries/techniques.
+// It works, hence showing simple hacks can sometimes be useful. 
+
+selectData = function(data, n){
+  var wid = data.x;
+  var hei = data.y;
+  var sel = [];
+  // skip n rows.
+  var i = data.x * n;
+  for(x = 0; x < wid; x++){
+    var z = data.data[i];
+    if(z < 0) z = 0;
+    sel.push({x:x,z:z});
+    i++;
+  }
+  return sel;
+}
+
+app.controller('Controller', ['$scope', '$http', function($scope, $http) {
+      $scope.message = "no message";
+      $scope.filename = '/science-browser/demos/webgl/threejs/dem.json';
+      $scope.submit = function() {
+        if ($scope.filename) {
+          $scope.message = "Loading...";
+          $http.get($scope.filename).
+            success(function(data, status, headers, config) {
+              $scope.message = "Loaded.";
+              //
+              //data = [{YEAR:0,ANN:11},{YEAR:1,ANN:22}];
+              console.log(data);
+              selection = selectData( data, 200 );
+              var chart = new dimple.chart(svg, selection);
+              chart.setBounds(50, 20, 700, 500);
+              chart.addCategoryAxis("x", "x").hidden = true;
+              chart.addMeasureAxis("y", "z").hidden = true;
+              chart.addSeries(null, dimple.plot.line);
+              chart.draw();
+            }).
+            error(function(data, status, headers, config) {
+              $scope.message = "Failed to load.";
+              console.log(status, data);
+            });
+        }
+      };
+    }]);
+
+  </script>
+  </head>
+  <body ng-app="share">
+<div id="chartContainer">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.1.0.min.js"></script>
+  <script>
+    var svg = dimple.newSvg("#chartContainer", 800, 600);
+  </script>
+</div>
+<form ng-submit="submit()" ng-controller="Controller">
+  Enter json file to load, then submit:
+  <input type="text" ng-model="filename" name="filename" />
+  <input type="submit" id="submit" value="Submit" />
+  <pre>{{message}}</pre>
+</form>
+
+<button onclick="TogetherJS(this); return false;">Start TogetherJS</button>
+</body>
+</html>
