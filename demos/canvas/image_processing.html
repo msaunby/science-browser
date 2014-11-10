@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <title>image processing demo</title>
+</head>
+<body>
+  <div id='mycanvas'></div>
+  <div id='mycanvas2'></div>
+  <script>
+
+  var canvas1 = document.createElement( 'canvas' );
+  canvas1.width = 512;
+  canvas1.height = 340;
+  var canvas2 = document.createElement( 'canvas' );
+  canvas2.width = 512;
+  canvas2.height = 340;
+  var context1 = canvas1.getContext( '2d' );
+  var context2 = canvas2.getContext( '2d' );
+  var imageObj = new Image();
+
+
+  var image2 = context2.getImageData( 0, 0, canvas2.width, canvas2.height );
+
+  document.getElementById('mycanvas').appendChild( canvas1 );
+  document.getElementById('mycanvas2').appendChild( canvas2 );
+
+  imageObj.onload = function() {
+        context1.drawImage(imageObj, 0, 0, 512, 340);
+        var image1 = context1.getImageData( 0, 0, canvas1.width, canvas1.height );
+        var x = 0, y = 0;
+        for ( var i = 0, j = 0; i < image1.data.length; i += 4, j++ ) {
+          x = j % canvas1.width;
+          y = x == 0 ? y + 1 : y;
+          // Each pixel has RGBA values with range 0-255
+          if(y % 2){
+            image2.data[ i ] = image1.data[ i+1 ];
+            image2.data[ i+1 ] = image1.data[ i+1 ];
+            image2.data[ i+2 ] = image1.data[ i+1 ] / 2;
+            image2.data[ i+3 ] = 255;
+          }else{
+            image2.data[ i ] = image1.data[ i ];
+            image2.data[ i+1 ] = 0;
+            image2.data[ i+2 ] = 0;
+            image2.data[ i+3 ] = 255;
+          }
+        }
+        context2.putImageData( image2, 0, 0 );
+  };
+  //imageObj.src = "http://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Monarch_In_May.jpg/1920px-Monarch_In_May.jpg";
+  imageObj.src = "Monarch_In_May.jpg";
+  </script>
+</body>
+</html>
