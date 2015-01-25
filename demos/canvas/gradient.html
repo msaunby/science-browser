@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <title>canvas gradient fill demo</title>
+</head>
+<body>
+  <div id='mycanvas'></div>
+  <p>
+    Here we use a gradient fill to create a colour palette.
+  </p>
+  <script>
+  // See
+  // https://developer.mozilla.org/en/docs/Web/API/CanvasRenderingContext2D
+  // and
+  //http://www.w3.org/TR/2dcontext/#pixel-manipulation
+  // for more information.
+
+  var canvas = document.createElement( 'canvas' );
+  canvas.width = 256;
+  canvas.height = 10;
+
+  var context = canvas.getContext( '2d' );
+  var grad = context.createLinearGradient(0,0,256,0);
+  grad.addColorStop(0, "#108010");
+  grad.addColorStop(.6, "#606010");
+  grad.addColorStop(1, "#906030");
+
+  context.fillStyle = grad;
+  context.fillRect(0, 0, 256, 10);
+
+  document.getElementById('mycanvas').appendChild( canvas );
+
+  // To apply these colour values elsewhere we can extract the pixel
+  // values from the first row of the canvas.
+  var image = context.getImageData( 0, 0, canvas.width, 1 );
+  for ( var i = 0; i < image.data.length; i += 4 ) {
+        r = image.data[ i ];
+        g = image.data[ i + 1 ];
+        b = image.data[ i + 2 ];
+        a = image.data[ i + 3 ];
+        console.log(r,g,b,a);
+  }
+
+  </script>
+</body>
+</html>
