@@ -10,7 +10,7 @@ var chart;
 
 // Important.
 // This is NOT a good example of the blending of these libraries/techniques.
-// It works, hence showing simple hacks can sometimes be useful. 
+// It works, hence showing simple hacks can sometimes be useful.
 
 selectData = function(data, n){
   var wid = data.x;
@@ -30,22 +30,30 @@ selectData = function(data, n){
 app.controller('Controller', ['$scope', '$http', function($scope, $http) {
       $scope.message = "no message";
       $scope.filename = '/science-browser/demos/webgl/threejs/dem.json';
+      $scope.maxY = 100;
+      $scope.chart;
+      $scope.data;
+
+      $scope.setRange = function() {
+        //console.log("range is? ", $scope.range);
+        $scope.chart.data = selectData( $scope.data, $scope.range );
+        $scope.chart.draw();
+      };
+
       $scope.submit = function() {
         if ($scope.filename) {
           $scope.message = "Loading...";
           $http.get($scope.filename).
             success(function(data, status, headers, config) {
               $scope.message = "Loaded.";
-              //
-              //data = [{YEAR:0,ANN:11},{YEAR:1,ANN:22}];
-              console.log(data);
-              selection = selectData( data, 200 );
-              var chart = new dimple.chart(svg, selection);
-              chart.setBounds(50, 20, 700, 500);
-              chart.addCategoryAxis("x", "x").hidden = true;
-              chart.addMeasureAxis("y", "z").hidden = true;
-              chart.addSeries(null, dimple.plot.line);
-              chart.draw();
+              $scope.maxY = data.y;
+              $scope.data = data;
+              $scope.chart = new dimple.chart(svg, selectData( $scope.data, $scope.range ));
+              $scope.chart.setBounds(50, 20, 700, 500);
+              $scope.chart.addCategoryAxis("x", "x").hidden = true;
+              $scope.chart.addMeasureAxis("y", "z").hidden = true;
+              $scope.chart.addSeries(null, dimple.plot.line);
+              $scope.chart.draw();
             }).
             error(function(data, status, headers, config) {
               $scope.message = "Failed to load.";
@@ -53,6 +61,7 @@ app.controller('Controller', ['$scope', '$http', function($scope, $http) {
             });
         }
       };
+
     }]);
 
   </script>
@@ -66,6 +75,8 @@ app.controller('Controller', ['$scope', '$http', function($scope, $http) {
   </script>
 </div>
 <form ng-submit="submit()" ng-controller="Controller">
+  <input type="range" id="range" ng-model="range" ng-change="setRange()" min="0" max="{{maxY}}" step="1" />
+  <br />
   Enter json file to load, then submit:
   <input type="text" ng-model="filename" name="filename" />
   <input type="submit" id="submit" value="Submit" />

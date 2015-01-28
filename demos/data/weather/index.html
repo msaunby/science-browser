@@ -1,0 +1,213 @@
+<!doctype html>
+<html ng-app="demo">
+  <head>
+    <title>science-browser weather demo</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.0-rc.3/angular.min.js"></script>
+    <!-- Perhaps better to visit threejs.org fork the github repo... -->
+    <script src="http://threejs.org/build/three.min.js"> </script>
+    <script src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
+    <style>
+      body {
+        margin: 0px;
+        background-color: #aaaaff;
+        overflow: hidden;
+      }
+    </style>
+<script>
+// The AngularJS setup
+var app = angular.module('demo', []);
+
+app.controller('Controller', ['$scope', '$http', function($scope, $http) {
+      $scope.message = ["",""];
+      $scope.dem = 'dem.json';
+      $scope.clouds = 'Total_cloud_cover.json';
+      $scope.sample = [];
+      $scope.submit = function() {
+        if ($scope.dem) {
+          $scope.message[0] = "Loading DEM...";
+          $http.get($scope.dem).
+            success(function(data, status, headers, config) {
+              $scope.message[0] = "Loaded DEM.";
+              // Render the data.
+              plotDEM( data );
+            }).
+            error(function(data, status, headers, config) {
+              $scope.message[0] = "Failed to load DEM.";
+              console.log(status, data);
+            });
+        }
+         if ($scope.dem) {
+          $scope.message[1] = "Loading clouds...";
+          $http.get($scope.clouds).
+            success(function(data, status, headers, config) {
+              $scope.message[1] = "Loaded clouds.";
+              // Render the data.
+              plotClouds( data.coverageData[0].values );
+            }).
+            error(function(data, status, headers, config) {
+              $scope.message[1] = "Failed to load clouds.";
+              console.log(status, data);
+            });
+        }
+      };
+    }]);
+</script>
+
+<script>
+// The ThreeJS setup - ideally should be 'angluarized'
+
+// Prepare a 'scene' with camera and lights
+var scene = new THREE.Scene();
+
+var width  = window.innerWidth,
+height = window.innerHeight;
+var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000);
+camera.position.y = -200;
+camera.position.z = 200;
+
+var controls = new THREE.TrackballControls(camera);
+
+var axes = new THREE.AxisHelper(200);
+scene.add(axes);
+
+var ambientLight = new THREE.AmbientLight( 0xffffff );
+scene.add( ambientLight );
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(width, height);
+
+var container = new THREE.Object3D();
+scene.add(container);
+
+function render() {
+      controls.update();
+      requestAnimationFrame(render);
+      renderer.render(scene, camera);
+}
+
+generateDEMTexture = function(dem){
+  var canvas = document.createElement( 'canvas' );
+  canvas.width = 512;
+  canvas.height = 512;
+
+  var context = canvas.getContext( '2d' );
+  var image = context.getImageData( 0, 0, canvas.width, canvas.height );
+
+  var x = 0, y = 0, v, r, g;
+  for ( var i = 0, j = 0, l = image.data.length; i < l; i += 4, j ++ ) {
+        x = j % canvas.width;
+        y = x == 0 ? y + 1 : y;
+        var xi = (x * dem.x/canvas.width).toFixed(0);
+        var yi = (y * dem.y/canvas.height).toFixed(0);
+        v = dem.data[(yi % dem.y) * dem.x + (xi % dem.x)];
+	if (v < 0 ){					     
+          image.data[ i ] = 15;
+          image.data[ i + 1 ] = 15;
+          image.data[ i + 2 ] = 255;
+          image.data[ i + 3 ] = 255;
+        }
+	else{
+          r = (v < 500) ? v/3 : 160;
+          g = (r < 100) ? 200-r: 128;
+          image.data[ i ] = r;
+          image.data[ i + 1 ] = g;
+          image.data[ i + 2 ] = 0;
+          image.data[ i + 3 ] = 255;
+       }
+
+  }
+  context.putImageData( image, 0, 0 );
+
+  return canvas;
+}
+
+plotDEM = function(dem){
+      // Now create an object to view - a 'mesh'
+      var geometry = new THREE.PlaneGeometry( 200, 200, dem.x-1, dem.y-1);
+
+      var grid = [];
+      grid = grid.concat(dem.data);
+      grid = grid.map(function(x){return (x/1000);});
+      grid = grid.map(function(x){ return x < 0 ? 0 : x;})
+      for(i = 0; i < grid.length; i++){
+        geometry.vertices[i].z = grid[i];
+      }
+
+      var texture = new THREE.Texture( generateDEMTexture(dem) );
+      texture.needsUpdate = true;
+      var material = new THREE.MeshPhongMaterial({
+        map: texture, transparent: true, specular: 0xdddddd, shininess: 80 });
+      material.side = THREE.DoubleSide;
+      var mesh = new THREE.Mesh(geometry, material);
+      container.add(mesh);
+}
+
+generateCloudTexture = function(grid){
+  var canvas = document.createElement( 'canvas' );
+  canvas.width = 512;
+  canvas.height = 512;
+
+  var context = canvas.getContext( '2d' );
+  var image = context.getImageData( 0, 0, canvas.width, canvas.height );
+
+  var x = 0, y = 0, v;
+  for ( var i = 0, j = 0, l = image.data.length; i < l; i += 4, j ++ ) {
+        x = j % canvas.width;
+        y = x == 0 ? y + 1 : y;
+        var xi = (x * grid.x/canvas.width).toFixed(0);
+        var yi = (y * grid.y/canvas.height).toFixed(0);
+        v = grid.data[(yi % grid.y)*grid.x + (xi % grid.x)];
+        image.data[ i ] = 255;
+        image.data[ i + 1 ] = 255;
+        image.data[ i + 2 ] = 255;
+        image.data[ i + 3 ] = v * 0.9; // Make 100% cloud cover 90% opacity.
+
+  }
+  context.putImageData( image, 0, 0 );
+
+  return canvas;
+}
+
+plotClouds = function( values ){
+      // Now create an object to view - a 'mesh'
+
+
+      var grid = {};
+      grid.data = [];
+      grid.y = values.length;
+      grid.x = values[0].length;
+
+      var geometry = new THREE.PlaneGeometry( 200, 200, grid.x-1, grid.y-1);
+
+      for(j = 0; j < values.length; j++){
+        grid.data = grid.data.concat(values[j]);
+      }
+      grid.data = grid.data.map(function(x){return 255 * (x/100);});
+      for(i = 0; i < grid.data.length; i++){
+        geometry.vertices[i].z = grid.data[i] * 0.2;  // Scale factor for cloud height
+      }
+
+      var texture = new THREE.Texture( generateCloudTexture(grid) );
+      texture.needsUpdate = true;
+      var material = new THREE.MeshPhongMaterial({
+        map: texture, transparent: true, specular: 0xdddddd, shininess: 80 });
+      material.side = THREE.DoubleSide;
+      var mesh = new THREE.Mesh(geometry, material);
+      mesh.position.z = 0.5;  // Approx 0.5km above sea level
+      container.add(mesh);
+}
+
+</script>
+</head>
+<body ng-app="demo">
+  <form ng-submit="submit()" ng-controller="Controller">
+    <input type="submit" id="submit" value="Load data" />
+    <pre>{{message}}</pre>
+  </form>
+  <div id="webgl"></div>
+  <script>
+    document.getElementById('webgl').appendChild(renderer.domElement);
+    render();
+  </script>
+</body>
+</html>
